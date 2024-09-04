@@ -10,7 +10,25 @@ if [ "$EUID" -ne 0 ]; then
   exit
 fi
 
-TARGET_DIR="/home/dev"
+TARGET="dev"
+TARGET_DIR="/home/$TARGET"
+
+PROJECT_NAME="authomatify"
+WEB_DOMAIN="$PROJECT_NAME.com"
+API_DOMAIN="api.$PROJECT_NAME.com"
+NGINX_CONFIG_NAME="$PROJECT_NAME-$TARGET"
+
+FRONTEND_APPLICATION_NAME="$PROJECT_NAME-frontend"
+FRONTEND_APPLICATION_SERVICE_NAME="$FRONTEND_APPLICATION_NAME-$TARGET"
+FRONTEND_APPLICATION_HOST="localhost"
+FRONTEND_APPLICATION_PORT=3000
+FRONTEND_APPLICATION_PROXY_PASS="http://$FRONTEND_APPLICATION_HOST:$FRONTEND_APPLICATION_PORT"
+
+BACKEND_APPLICATION_NAME="$PROJECT_NAME-backend"
+BACKEND_APPLICATION_SERVICE_NAME="$BACKEND_APPLICATION_NAME-$TARGET"
+BACKEND_APPLICATION_HOST="localhost"
+BACKEND_APPLICATION_PORT=4000
+BACKEND_APPLICATION_PROXY_PASS="http://$BACKEND_APPLICATION_HOST:$BACKEND_APPLICATION_PORT"
 
 # ------------------------------------------------------------------------------
 
@@ -78,12 +96,12 @@ log_message "Nginx installation completed."
 
 log_message "Configuring Nginx..."
 
-sudo tee /etc/nginx/sites-available/authomatify >/dev/null <<EOF
+sudo tee /etc/nginx/sites-available/$NGINX_CONFIG_NAME >/dev/null <<EOF
 server {
-    server_name authomatify.com;
+    server_name $WEB_DOMAIN;
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass $FRONTEND_APPLICATION_PROXY_PASS;
         proxy_read_timeout 60;
         proxy_connect_timeout 60;
         proxy_redirect off;
@@ -97,15 +115,15 @@ server {
     
     location /_next/static {
         add_header Cache-Control "public, max-age=3600, immutable";
-        proxy_pass http://localhost:3000/_next/static;
+        proxy_pass $FRONTEND_APPLICATION_PROXY_PASS/_next/static;
     }
 }
 
 server {
-    server_name api.authomatify.com;
+    server_name $API_DOMAIN;
 
     location / {
-        proxy_pass http://localhost:4000;
+        proxy_pass $BACKEND_APPLICATION_PROXY_PASS;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -119,7 +137,7 @@ log_message "Nginx configuration completed."
 
 log_message "Enabling Nginx configuration and reloading the service..."
 
-sudo ln -s /etc/nginx/sites-available/authomatify /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/$NGINX_CONFIG_NAME /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
 log_message "Nginx configuration enabled and service reloaded."
@@ -160,20 +178,20 @@ log_message "Deploying the backend application..."
 
 mkdir -p "$TARGET_DIR"
 cd "$TARGET_DIR"
-git clone git@github.com:authomatify/authomatify-backend.git authomatify-backend
-cd authomatify-backend
+git clone git@github.com:$PROJECT_NAME/$BACKEND_APPLICATION_NAME.git $BACKEND_APPLICATION_NAME
+cd $BACKEND_APPLICATION_NAME
 npm install >/dev/null 2>&1
-pm2 start --name "authomatify-backend-dev" npm -- run start:dev
+pm2 start --name "$BACKEND_APPLICATION_SERVICE_NAME" npm -- run start:dev
 
 log_message "Backend application deployment completed."
 
 log_message "Deploying the frontend application..."
 
 cd "$TARGET_DIR"
-git clone git@github.com:authomatify/authomatify-frontend.git authomatify-frontend
-cd authomatify-frontend
+git clone git@github.com:$PROJECT_NAME/$FRONTEND_APPLICATION_NAME.git $FRONTEND_APPLICATION_NAME
+cd $FRONTEND_APPLICATION_NAME
 npm install >/dev/null 2>&1
-pm2 start --name "authomatify-frontend-dev" npm -- run dev
+pm2 start --name "$FRONTEND_APPLICATION_SERVICE_NAME" npm -- run dev
 
 log_message "Frontend application deployment completed."
 
