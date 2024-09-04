@@ -130,6 +130,7 @@ log_message "Installing Node.js and PM2..."
 
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash >/dev/null 2>&1
 source ~/.bashrc
+[[ -s $HOME/.nvm/nvm.sh ]] && . $HOME/.nvm/nvm.sh
 nvm install --lts >/dev/null 2>&1
 nvm use --lts >/dev/null 2>&1
 sudo apt-get install -y npm >/dev/null 2>&1
@@ -178,6 +179,6 @@ log_message "Frontend application deployment completed."
 
 log_message "All tasks have been successfully completed. Run 'pm2 list' to view the running applications."
 
-nano init.sh
-chmod +x init.sh
-sudo ./init.sh
+# nano server-init.sh
+# chmod +x server-init.sh
+# sudo ./server-init.sh
