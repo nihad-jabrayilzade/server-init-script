@@ -54,9 +54,9 @@ sudo apt-get install -y ca-certificates curl gnupg lsb-release >/dev/null 2>&1
 log_message "System update and package installation completed."
 
 # ------------------------------------------------------------------------------
-
 log_message "Generating SSH key for GitHub access..."
 
+sudo su - $TARGET
 ssh-keygen -t ed25519 -C "$USER_EMAIL"
 
 log_message "SSH key generated."
@@ -70,6 +70,7 @@ read -p "Please add the above SSH key to your GitHub account. Press Enter to con
 
 log_message "Continuing script after SSH key has been added to GitHub."
 
+sudo su - root
 # ------------------------------------------------------------------------------
 
 log_message "Configuring Nginx..."
